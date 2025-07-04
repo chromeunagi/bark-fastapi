@@ -11,7 +11,7 @@ gcloud builds submit --tag gcr.io/barker-464903/bark-server
 Step 2:
 
 ```
-gcloud run deploy bark-server \                            
+gcloud run deploy bark-server \
   --image gcr.io/barker-464903/bark-server \
   --platform managed \
   --region us-central1 \
