@@ -6,11 +6,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bark Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
         body {
             background-color: #f9f7f3;
         }
+
+        @keyframes rowEnter {
+            0% {
+                opacity: 0;
+                transform: translateY(-15px) scale(0.95);
+                background-color: #fef3c7;
+            }
+
+            60% {
+                background-color: #fff7ed;
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                background-color: transparent;
+            }
+        }
+
+        @keyframes rowExit {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+
+        .row-enter {
+            animation: rowEnter 0.6s ease-out;
+        }
+
+        .row-exit {
+            animation: rowExit 0.4s ease-in forwards;
+        }
     </style>
+
 </head>
 
 <body class="text-gray-900 font-sans">
@@ -120,43 +160,87 @@
             });
         }
 
+
         async function fetchBarks() {
             const response = await fetch("/barks-json");
             const barks = await response.json();
 
             const useRelative = document.getElementById("timeToggle").checked;
             const tbody = document.getElementById("bark-table-body");
-            tbody.innerHTML = "";
 
-            barks.forEach(bark => {
+            const existingRows = Array.from(tbody.children);
+            const existingIds = existingRows.map(row => row.dataset.barkId);
+            const newIds = barks.map(b => `${b.device_id}-${b.timestamp}`);
+            const incomingSet = new Set(newIds);
+
+            // Animate out rows that are no longer present
+            existingRows.forEach(row => {
+                const id = row.dataset.barkId;
+                if (!incomingSet.has(id)) {
+                    row.classList.add("row-exit");
+                    setTimeout(() => row.remove(), 400); // match .row-exit animation duration
+                }
+            });
+
+            // Add new rows
+            barks.forEach((bark, index) => {
+                const id = `${bark.device_id}-${bark.timestamp}`;
+                const existing = tbody.querySelector(`[data-bark-id="${id}"]`);
+                if (existing) return;
+
                 const row = document.createElement("tr");
-                const isLoud = bark.volume > 500;
-                row.className = "border-b border-gray-100" + (isLoud ? " bg-orange-50" : "");
+                row.dataset.barkId = id;
+                row.className = "border-b border-gray-100 row-enter" + (bark.volume > 500 ? " bg-orange-50" : "");
 
                 const timeString = formatTime(bark.timestamp, useRelative);
+                row.dataset.timestamp = bark.timestamp;
 
                 row.innerHTML = `
-                <td class="px-4 py-2">${timeString}</td>
-                <td class="px-4 py-2">${bark.device_id}</td>
-                <td class="px-4 py-2">${bark.frequency.toFixed(1)}</td>
-                <td class="px-4 py-2">${bark.volume.toFixed(1)}</td>
-            `;
+            <td class="px-4 py-2">${timeString}</td>
+            <td class="px-4 py-2">${bark.device_id}</td>
+            <td class="px-4 py-2">${bark.frequency.toFixed(1)}</td>
+            <td class="px-4 py-2">${bark.volume.toFixed(1)}</td>
+        `;
 
-                tbody.appendChild(row);
+                // Highlight newest bark
+                if (index === 0) {
+                    row.classList.add("bg-orange-100");
+                    setTimeout(() => row.classList.remove("bg-orange-100"), 1000);
+                }
+
+                // Insert at top of list
+                tbody.insertBefore(row, tbody.children[index] || null);
             });
+
             lastUpdated = Date.now();
             updateLastUpdatedDisplay();
         }
 
-        // Reload every 5 seconds
-        setInterval(fetchBarks, 5000);
+        function refreshTimeFormat() {
+            const useRelative = document.getElementById("timeToggle").checked;
+            const rows = document.querySelectorAll("#bark-table-body tr");
+
+            rows.forEach(row => {
+                const ts = parseFloat(row.dataset.timestamp);
+                const cell = row.querySelector("td");
+                if (cell) cell.textContent = formatTime(ts, useRelative);
+            });
+        }
+
+        // Initial fetch
         fetchBarks();
 
-        // Trigger refresh when toggle is changed
+        // Poll every 5s
+        setInterval(fetchBarks, 5000);
+
+        // Update "last updated" every second
+        setInterval(updateLastUpdatedDisplay, 1000);
+
+        // Rerender table when toggle flips
         document.getElementById("timeToggle").addEventListener("change", fetchBarks);
+        document.getElementById("timeToggle").addEventListener("change", refreshTimeFormat);
 
     </script>
-
 </body>
 
 </html>
