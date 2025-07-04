@@ -1,8 +1,12 @@
 from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from datetime import datetime
+from typing import List
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+
 
 class BarkEvent(BaseModel):
     device_id: str
@@ -11,12 +15,17 @@ class BarkEvent(BaseModel):
     frequency: float
     event: str
 
-# Store events in memory for now
-bark_events = []
+
+bark_events: List[BarkEvent] = []
+
 
 @app.get("/")
-def root():
-    return {"status": "ok", "barks": len(bark_events)}
+def root(request: Request):
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "barks": bark_events[-10:], "now": datetime.now},
+    )
+
 
 @app.post("/bark")
 async def receive_bark(event: BarkEvent):
