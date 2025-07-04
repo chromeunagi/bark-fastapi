@@ -38,6 +38,9 @@
                         </div>
                     </label>
                 </div>
+                <p id="last-updated" class="text-xs text-gray-500 mt-4 text-right italic">
+                    Last updated at —
+                </p>
                 <table class="min-w-full text-sm text-left text-gray-700">
                     <thead class="bg-orange-50 text-orange-700 font-medium">
                         <tr>
@@ -61,6 +64,37 @@
     </div>
 
     <script>
+        let lastUpdated = null;
+
+        function formatAbsolute(ts) {
+            const date = new Date(ts);
+            return date.toLocaleString(undefined, {
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true,
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function formatRelative(ts) {
+            const seconds = Math.floor((Date.now() - ts) / 1000);
+            if (seconds < 60) return `${seconds}s ago`;
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m ago`;
+            const hours = Math.floor(minutes / 60);
+            return `${hours}h ago`;
+        }
+
+        function updateLastUpdatedDisplay() {
+            if (!lastUpdated) return;
+            const absolute = formatAbsolute(lastUpdated);
+            const relative = formatRelative(lastUpdated);
+            document.getElementById("last-updated").textContent = `Last updated at ${absolute}`;
+        }
+
         function formatTime(timestamp, useRelative = false) {
             const date = new Date(timestamp * 1000);
 
@@ -110,6 +144,8 @@
 
                 tbody.appendChild(row);
             });
+            lastUpdated = Date.now();
+            updateLastUpdatedDisplay();
         }
 
         // Reload every 5 seconds
@@ -118,6 +154,7 @@
 
         // Trigger refresh when toggle is changed
         document.getElementById("timeToggle").addEventListener("change", fetchBarks);
+
     </script>
 
 </body>
