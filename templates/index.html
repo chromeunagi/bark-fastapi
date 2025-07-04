@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bark Dashboard</title>
@@ -53,54 +54,55 @@
 
 </head>
 
-<body class="text-gray-900 font-sans">
-    <div class="max-w-4xl mx-auto px-6 py-10">
-        <div class="mb-10">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">🐶 Bark Dashboard</h1>
-            <p class="text-base text-gray-600">A real-time microphone-based system for detecting dog barks. Powered by
-                shitty hardware, shitty self-trained models, and FastAPI.</p>
-        </div>
+<body class="bg-[#f9f7f3] text-gray-900 font-sans">
+    <div class="dot bg-white w-4 h-4 rounded-full shadow-md transform transition duration-300"></div>
+    <div class="flex justify-center mt-8 relative z-10">
+        <img src="/assets/dogs.png" alt="Cute Dogs"
+            class="w-32 md:w-40 lg:w-44 rounded-xl shadow-xl ring-2 ring-orange-200" />
+    </div>
 
-        <div class="bg-white rounded-2xl shadow-md p-6 mb-8 border border-orange-100">
-            <h2 class="text-lg font-semibold text-orange-500 mb-4">Latest Bark Events</h2>
-            <p class="text-sm text-gray-500 mb-4">Showing the last {{ barks|length }} detections:</p>
+    <div
+        class="max-w-4xl mx-auto mt-[-1.5rem] bg-white rounded-2xl shadow-md px-8 pt-10 pb-6 border border-orange-100 relative z-0">
 
-            <div class="overflow-x-auto">
-                <div class="flex items-center justify-end mb-4">
-                    <span class="text-sm text-gray-600 mr-3">Relative time</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="timeToggle" class="sr-only peer">
-                        <div
-                            class="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-orange-400 transition-colors duration-300">
-                        </div>
-                        <div
-                            class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-5">
-                        </div>
-                    </label>
-                </div>
-                <p id="last-updated" class="text-xs text-gray-500 mt-4 text-right italic">
-                    Last updated at —
-                </p>
-                <table class="min-w-full text-sm text-left text-gray-700">
-                    <thead class="bg-orange-50 text-orange-700 font-medium">
-                        <tr>
-                            <th class="px-4 py-2">Time</th>
-                            <th class="px-4 py-2">Device</th>
-                            <th class="px-4 py-2">Frequency (Hz)</th>
-                            <th class="px-4 py-2">Volume</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bark-table-body">
-                        <tr>
-                            <td colspan="4" class="px-4 py-2 text-gray-400 italic">Loading events...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <!-- Title and subtitle -->
+        <div class="text-center max-w-xl mx-auto mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">🐶 Bad Barkers Dashboard</h1>
+            <p class="text-base text-gray-600 mt-2">
+                Real-time bad barker detection. I'm watching you.
+            </p>
         </div>
-        <footer class="text-center text-xs text-gray-400 mt-12">
-            <p>Built by Sam Gamer using ESP32, FastAPI, and Tailwind CSS · © {{ now().year }}</p>
-        </footer>
+<!-- Controls -->
+<div class="flex justify-end items-center gap-2 mb-4">
+    <label for="timeToggle" class="text-sm text-gray-600">Relative time</label>
+
+    <button id="timeToggle" role="switch" aria-checked="false"
+        class="w-11 h-6 flex items-center bg-gray-300 rounded-full p-1 transition duration-300 focus:outline-none">
+        <div class="dot bg-white w-4 h-4 rounded-full shadow-md transform transition duration-300"></div>
+    </button>
+</div>
+        <p id="last-updated" class="text-xs text-gray-500 text-right italic mb-4">
+            Last updated at —
+        </p>
+
+        <table class="min-w-full text-sm text-left text-gray-700">
+            <thead class="bg-orange-50 text-orange-700 font-medium">
+                <tr>
+                    <th class="px-4 py-2">Time</th>
+                    <th class="px-4 py-2">Device</th>
+                    <th class="px-4 py-2">Frequency (Hz)</th>
+                    <th class="px-4 py-2">Volume</th>
+                </tr>
+            </thead>
+            <tbody id="bark-table-body">
+                <tr>
+                    <td colspan="4" class="px-4 py-2 text-gray-400 italic">Loading events...</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+    <footer class="text-center text-xs text-gray-400 mt-12">
+        <p>Built by Sam Gamer using ESP32, FastAPI, and Tailwind CSS · © {{ now().year }}</p>
+    </footer>
     </div>
 
     <script>
@@ -165,7 +167,7 @@
             const response = await fetch("/barks-json");
             const barks = await response.json();
 
-            const useRelative = document.getElementById("timeToggle").checked;
+            const useRelative = document.getElementById("timeToggle").getAttribute("aria-checked") === "true";
             const tbody = document.getElementById("bark-table-body");
 
             const existingRows = Array.from(tbody.children);
@@ -217,7 +219,8 @@
         }
 
         function refreshTimeFormat() {
-            const useRelative = document.getElementById("timeToggle").checked;
+            const useRelative = document.getElementById("timeToggle").getAttribute("aria-checked") === "true";
+
             const rows = document.querySelectorAll("#bark-table-body tr");
 
             rows.forEach(row => {
@@ -227,6 +230,24 @@
             });
         }
 
+            const toggleBtn = document.getElementById("timeToggle");
+
+            toggleBtn.addEventListener("click", () => {
+                const isChecked = toggleBtn.getAttribute("aria-checked") === "true";
+                toggleBtn.setAttribute("aria-checked", String(!isChecked));
+
+                // animate the toggle dot
+                const dot = toggleBtn.querySelector(".dot");
+                dot.classList.toggle("translate-x-5"); // shift to right
+                dot.classList.toggle("bg-orange-400");
+                toggleBtn.classList.toggle("bg-orange-200");
+                toggleBtn.classList.toggle("bg-gray-300");
+
+                // rerender table with new time format
+                fetchBarks();
+                refreshTimeFormat();
+            });
+
         // Initial fetch
         fetchBarks();
 
@@ -235,11 +256,6 @@
 
         // Update "last updated" every second
         setInterval(updateLastUpdatedDisplay, 1000);
-
-        // Rerender table when toggle flips
-        document.getElementById("timeToggle").addEventListener("change", fetchBarks);
-        document.getElementById("timeToggle").addEventListener("change", refreshTimeFormat);
-
     </script>
 </body>
 
