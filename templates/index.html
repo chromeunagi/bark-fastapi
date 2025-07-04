@@ -50,15 +50,72 @@
         .row-exit {
             animation: rowExit 0.4s ease-in forwards;
         }
+
+        .bubble {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            opacity: 0;
+            animation: floatDown 10s linear forwards;
+        }
+
+        @keyframes floatDown {
+            0% {
+                transform: translate(-50%, -100px) scale(0.6);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, 100vh) scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        @keyframes spinCW {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spinCCW {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(-360deg);
+            }
+        }
+
+        .spinCW,
+        .spinCCW {
+            animation-duration: 10s;
+            animation-iteration-count: infinite;
+            animation-timing-function: linear;
+            animation-name: spinCW;
+        }
+
+        .spinCCW {
+            animation: spinCCW 10s linear infinite;
+        }
     </style>
 
 </head>
 
 <body class="bg-[#f9f7f3] text-gray-900 font-sans">
+    <div id="bubble-container" class="pointer-events-none fixed inset-0 z-50 overflow-hidden"></div>
     <div class="dot bg-white w-4 h-4 rounded-full shadow-md transform transition duration-300"></div>
     <div class="flex justify-center mt-8 relative z-10">
         <img src="/assets/dogs.png" alt="Cute Dogs"
-            class="w-32 md:w-40 lg:w-44 rounded-xl shadow-xl ring-2 ring-orange-200" />
+            class="w-64 md:w-40 lg:w-44 rounded-xl shadow-xl ring-2 ring-orange-200" />
     </div>
 
     <div
@@ -71,15 +128,15 @@
                 Real-time bad barker detection. I'm watching you.
             </p>
         </div>
-<!-- Controls -->
-<div class="flex justify-end items-center gap-2 mb-4">
-    <label for="timeToggle" class="text-sm text-gray-600">Relative time</label>
+        <!-- Controls -->
+        <div class="flex justify-end items-center gap-2 mb-4">
+            <label for="timeToggle" class="text-sm text-gray-600">Relative time</label>
 
-    <button id="timeToggle" role="switch" aria-checked="false"
-        class="w-11 h-6 flex items-center bg-gray-300 rounded-full p-1 transition duration-300 focus:outline-none">
-        <div class="dot bg-white w-4 h-4 rounded-full shadow-md transform transition duration-300"></div>
-    </button>
-</div>
+            <button id="timeToggle" role="switch" aria-checked="false"
+                class="w-11 h-6 flex items-center bg-gray-300 rounded-full p-1 transition duration-300 focus:outline-none">
+                <div class="dot bg-white w-4 h-4 rounded-full shadow-md transform transition duration-300"></div>
+            </button>
+        </div>
         <p id="last-updated" class="text-xs text-gray-500 text-right italic mb-4">
             Last updated at —
         </p>
@@ -99,13 +156,15 @@
                 </tr>
             </tbody>
         </table>
-        </div>
+    </div>
     <footer class="text-center text-xs text-gray-400 mt-12">
         <p>Built by Sam Gamer using ESP32, FastAPI, and Tailwind CSS · © {{ now().year }}</p>
     </footer>
     </div>
 
     <script>
+        let hasInitialized = false;
+        let lastTopBarkId = null;
         let lastUpdated = null;
 
         function formatAbsolute(ts) {
@@ -208,6 +267,12 @@
                 if (index === 0) {
                     row.classList.add("bg-orange-100");
                     setTimeout(() => row.classList.remove("bg-orange-100"), 1000);
+
+                    const currentTopBarkId = `${bark.device_id}-${bark.timestamp}`;
+                    if (hasInitialized && currentTopBarkId !== lastTopBarkId) {
+                        triggerBubbleAnimation();
+                    }
+                    lastTopBarkId = currentTopBarkId;
                 }
 
                 // Insert at top of list
@@ -216,6 +281,10 @@
 
             lastUpdated = Date.now();
             updateLastUpdatedDisplay();
+
+            if (!hasInitialized) {
+                hasInitialized = true;
+            }
         }
 
         function refreshTimeFormat() {
@@ -230,23 +299,61 @@
             });
         }
 
-            const toggleBtn = document.getElementById("timeToggle");
+        const toggleBtn = document.getElementById("timeToggle");
 
-            toggleBtn.addEventListener("click", () => {
-                const isChecked = toggleBtn.getAttribute("aria-checked") === "true";
-                toggleBtn.setAttribute("aria-checked", String(!isChecked));
+        toggleBtn.addEventListener("click", () => {
+            const isChecked = toggleBtn.getAttribute("aria-checked") === "true";
+            toggleBtn.setAttribute("aria-checked", String(!isChecked));
 
-                // animate the toggle dot
-                const dot = toggleBtn.querySelector(".dot");
-                dot.classList.toggle("translate-x-5"); // shift to right
-                dot.classList.toggle("bg-orange-400");
-                toggleBtn.classList.toggle("bg-orange-200");
-                toggleBtn.classList.toggle("bg-gray-300");
+            // animate the toggle dot
+            const dot = toggleBtn.querySelector(".dot");
+            dot.classList.toggle("translate-x-5"); // shift to right
+            dot.classList.toggle("bg-orange-400");
+            toggleBtn.classList.toggle("bg-orange-200");
+            toggleBtn.classList.toggle("bg-gray-300");
 
-                // rerender table with new time format
-                fetchBarks();
-                refreshTimeFormat();
-            });
+            // rerender table with new time format
+            fetchBarks();
+            refreshTimeFormat();
+        });
+
+        function triggerBubbleAnimation() {
+            const container = document.getElementById("bubble-container");
+            const numBubbles = Math.floor(Math.random() * 10) + 10;
+            const dogImages = ["/assets/leo_bark.png", "/assets/sierra_bark.png"];
+
+            for (let i = 0; i < numBubbles; i++) {
+                const wrapper = document.createElement("div");
+                wrapper.className = "bubble";
+
+                const imageUrl = dogImages[Math.floor(Math.random() * dogImages.length)]; // ✅ FIXED
+
+                const inner = document.createElement("div");
+                inner.className = Math.random() > 0.5 ? "spinCW" : "spinCCW";
+
+                // Style inner image
+                inner.style.backgroundImage = `url(${imageUrl})`;
+
+
+                inner.style.width = `100%`;
+                inner.style.height = `100%`;
+                inner.style.backgroundSize = `cover`;
+                inner.style.backgroundRepeat = `no-repeat`;
+                inner.style.borderRadius = `9999px`;
+
+                // Horizontal position and offset
+                wrapper.style.left = `${Math.random() * 100}%`;
+                wrapper.style.top = `${-Math.random() * 100}px`;
+                wrapper.style.transform = `translateX(-50%)`;
+                wrapper.style.animationDelay = `${Math.random() * 0.2}s`;
+
+                wrapper.appendChild(inner);
+                container.appendChild(wrapper);
+
+                setTimeout(() => wrapper.remove(), 11000);
+            }
+        }
+
 
         // Initial fetch
         fetchBarks();
