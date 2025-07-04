@@ -9,7 +9,6 @@
     <style>
         body {
             background-color: #f9f7f3;
-            /* soft off-white */
         }
     </style>
 </head>
@@ -36,7 +35,7 @@
                             <th class="px-4 py-2">Volume</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="bark-table-body">
                         {% for bark in barks %}
                         <tr class="border-b border-gray-100 {% if bark.volume > 500 %}bg-orange-50{% endif %}">
                             <td class="px-4 py-2">{{ bark.timestamp | int }}</td>
@@ -54,6 +53,37 @@
             <p>Built by Sam Gamer using ESP32, FastAPI, and Tailwind CSS · © {{ now().year }}</p>
         </footer>
     </div>
+
+    <script>
+        async function fetchBarks() {
+            const response = await fetch("/barks-json");
+            const barks = await response.json();
+
+            const tbody = document.getElementById("bark-table-body");
+            tbody.innerHTML = ""; // Clear existing rows
+
+            barks.forEach(bark => {
+                const row = document.createElement("tr");
+                const isLoud = bark.volume > 500;
+                row.className = "border-b border-gray-100" + (isLoud ? " bg-orange-50" : "");
+
+                const time = new Date(bark.timestamp * 1000).toLocaleTimeString();
+
+                row.innerHTML = `
+                    <td class="px-4 py-2">${time}</td>
+                    <td class="px-4 py-2">${bark.device_id}</td>
+                    <td class="px-4 py-2">${bark.frequency.toFixed(1)}</td>
+                    <td class="px-4 py-2">${bark.volume.toFixed(1)}</td>
+                `;
+
+                tbody.appendChild(row);
+            });
+        }
+
+        // Load immediately, then every 5 seconds
+        fetchBarks();
+        setInterval(fetchBarks, 5000);
+    </script>
 </body>
 
 </html>

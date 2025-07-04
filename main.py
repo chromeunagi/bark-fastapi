@@ -49,3 +49,14 @@ async def receive_bark(event: BarkEvent):
 
     db.collection("barks").add(doc)
     return {"message": "Bark received and added to firestore"}
+
+@app.get("/barks-json")
+def get_barks():
+    recent_barks_query = (
+        db.collection("barks")
+        .order_by("timestamp", direction=firestore.Query.DESCENDING)
+        .limit(10)
+    )
+    snapshots = list(recent_barks_query.stream())
+    barks = [snap.to_dict() for snap in snapshots]
+    return barks
